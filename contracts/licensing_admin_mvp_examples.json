@@ -1,0 +1,257 @@
+{
+  "protocol_version": "1.0",
+  "license_example": {
+    "license_key": "LIC-XXXXX",
+    "status": "active",
+    "mode": "enforce",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "plan_name": "mvp-pro",
+    "max_instances": 2,
+    "max_fingerprints": 2,
+    "allowed_protocol_min": "1.0",
+    "allowed_protocol_max": "1.0",
+    "expires_at": "2026-12-31T23:59:59Z"
+  },
+  "bot_instance_example": {
+    "bot_instance_id": "botinst_123",
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "machine_fingerprint": "fp_abc",
+    "hostname": "trader-pc",
+    "bot_version": "0.1.0",
+    "protocol_version": "1.0",
+    "status": "online",
+    "server_effective_mode": "enforce",
+    "authorized_until": "2026-03-20T12:30:00Z"
+  },
+  "trading_session_example": {
+    "session_id": "sess_001",
+    "bot_instance_id": "botinst_123",
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "account_label": "main-demo",
+    "symbol": "BTCUSDT",
+    "session_status": "active",
+    "demo_mode": true,
+    "started_at": "2026-03-20T12:00:00Z"
+  },
+  "register_request": {
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "bot_instance_id": "botinst_123",
+    "machine_fingerprint": "fp_abc",
+    "fingerprint_version": "1",
+    "session_id": "sess_001",
+    "protocol_version": "1.0",
+    "bot_version": "0.1.0",
+    "hostname": "trader-pc",
+    "platform": "windows-11",
+    "account_label": "main-demo",
+    "subaccount_label": "",
+    "mode": "monitor",
+    "demo_mode": true,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ]
+  },
+  "register_response": {
+    "ok": true,
+    "request_id": "req_123",
+    "server_time": "2026-03-20T12:00:00Z",
+    "protocol_version": "1.0",
+    "license_status": "active",
+    "bot_status": "online",
+    "effective_mode": "monitor",
+    "authorization": {
+      "allowed": true,
+      "reason_code": null,
+      "message": "allowed",
+      "authorized_until": "2026-03-20T12:30:00Z"
+    },
+    "timers": {
+      "heartbeat_sec": 15,
+      "state_sync_sec": 60,
+      "command_poll_sec": 10
+    },
+    "flags": {
+      "suspicious": false,
+      "license_recheck_required": false
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "heartbeat_request": {
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "bot_instance_id": "botinst_123",
+    "session_id": "sess_001",
+    "protocol_version": "1.0",
+    "status": "online",
+    "account_label": "main-demo",
+    "subaccount_label": "",
+    "symbol": "BTCUSDT",
+    "sent_at": "2026-03-20T12:00:15Z"
+  },
+  "state_request": {
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "bot_instance_id": "botinst_123",
+    "session_id": "sess_001",
+    "protocol_version": "1.0",
+    "bot_state": {
+      "product_code": "grid",
+      "bot_family": "grid",
+      "strategy_code": "grid_v1",
+      "bot_status": "online",
+      "session_status": "active",
+      "connectivity_status": "grace",
+      "connectivity_mode": "enforce",
+      "grace_until": "2026-03-20T12:30:00Z",
+      "can_open_new_orders": false,
+      "can_manage_existing_orders": true,
+      "close_only_mode": true,
+      "current_symbols": [
+        "BTCUSDT"
+      ]
+    },
+    "symbol_states": [
+      {
+        "symbol": "BTCUSDT",
+        "symbol_status": "close_only",
+        "side_mode": "both",
+        "grid_enabled": true,
+        "open_orders_count": 12,
+        "position_size_long": 0.01,
+        "position_size_short": 0.0,
+        "unrealized_pnl": 4.25
+      }
+    ],
+    "position_snapshots": [
+      {
+        "symbol": "BTCUSDT",
+        "position_idx": 1,
+        "side": "long",
+        "qty": 0.01,
+        "entry_price": 62000,
+        "mark_price": 62100,
+        "unrealized_pnl": 1.0
+      }
+    ],
+    "sent_at": "2026-03-20T12:01:00Z"
+  },
+  "command_example": {
+    "command_id": "cmd_001",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "command_type": "pause",
+    "risk_class": "medium-risk",
+    "payload": {},
+    "created_at": "2026-03-20T12:01:02Z",
+    "expires_at": "2026-03-20T12:06:02Z",
+    "reason": "manual admin action",
+    "requires_ack": true
+  },
+  "command_result_request": {
+    "license_key": "LIC-XXXXX",
+    "product_code": "grid",
+    "bot_family": "grid",
+    "strategy_code": "grid_v1",
+    "bot_instance_id": "botinst_123",
+    "session_id": "sess_001",
+    "protocol_version": "1.0",
+    "command_id": "cmd_001",
+    "command_type": "pause",
+    "result_status": "completed",
+    "message": "new orders paused",
+    "details": {
+      "can_open_new_orders": false
+    },
+    "sent_at": "2026-03-20T12:01:08Z"
+  },
+  "connectivity_policy_examples": {
+    "off": {
+      "mode": "off",
+      "grace_period_sec": 0,
+      "behavior": {
+        "no_new_orders": false,
+        "manage_existing_orders": true,
+        "close_only": false,
+        "pause": false
+      }
+    },
+    "monitor": {
+      "mode": "monitor",
+      "grace_period_sec": null,
+      "behavior": {
+        "no_new_orders": false,
+        "manage_existing_orders": true,
+        "close_only": false,
+        "pause": true
+      }
+    },
+    "enforce_after_grace": {
+      "mode": "enforce",
+      "grace_period_sec": 900,
+      "behavior": {
+        "no_new_orders": true,
+        "manage_existing_orders": true,
+        "close_only": true,
+        "pause": true
+      }
+    }
+  },
+  "admin_filter_examples": {
+    "license_list": {
+      "product_code": "grid",
+      "bot_family": "grid",
+      "strategy_code": "grid_v1",
+      "status": "active",
+      "suspicious_flag": false
+    },
+    "active_bots": {
+      "product_code": "hedge",
+      "bot_family": "hedge",
+      "strategy_code": "hedge_v1",
+      "connectivity_status": "restricted",
+      "status": "paused"
+    }
+  },
+  "alert_examples": [
+    {
+      "alert_type": "duplicate_license_usage",
+      "severity": "high",
+      "status": "open",
+      "license_key": "LIC-XXXXX",
+      "product_code": "grid",
+      "bot_family": "grid",
+      "strategy_code": "grid_v1",
+      "summary": "single-instance license active on two machines",
+      "first_seen_at": "2026-03-20T12:03:00Z"
+    },
+    {
+      "alert_type": "protocol_mismatch",
+      "severity": "medium",
+      "status": "open",
+      "license_key": "LIC-YYYYY",
+      "product_code": "hedge",
+      "bot_family": "hedge",
+      "strategy_code": "hedge_v1",
+      "summary": "client protocol 0.9 outside supported range 1.0-1.0",
+      "first_seen_at": "2026-03-20T12:04:00Z"
+    }
+  ]
+}
