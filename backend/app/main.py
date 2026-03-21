@@ -7,17 +7,19 @@ from fastapi import APIRouter, FastAPI
 from sqlalchemy import inspect, select
 
 from app.api.health import router as health_router
-from app.api.routes import auth_router, license_router
+from app.api.routes import admin_router, auth_router, bot_router, license_router
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
-from app.models.admin_user import AdminRole, AdminUser
+from app.models.admin_user import AdminUser
 
 logger = logging.getLogger(__name__)
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(bot_router)
 api_v1_router.include_router(license_router)
+api_v1_router.include_router(admin_router)
 
 
 @asynccontextmanager
@@ -42,24 +44,20 @@ def bootstrap_admin_user() -> None:
         return
 
     admin_email = settings.bootstrap_admin_email.lower().strip()
-    try:
-        admin_role = AdminRole(settings.bootstrap_admin_role.lower())
-    except ValueError:
-        logger.warning("invalid bootstrap admin role %s; skipping admin bootstrap", settings.bootstrap_admin_role)
-        return
-
     with SessionLocal() as db_session:
         existing_admin = db_session.scalar(select(AdminUser).where(AdminUser.email == admin_email))
         if existing_admin is not None:
             return
 
+        username = admin_email.split("@", 1)[0][:64] or "admin"
         db_session.add(
             AdminUser(
                 email=admin_email,
+                username=username,
                 password_hash=hash_password(settings.bootstrap_admin_password),
-                role=admin_role,
-                full_name=settings.bootstrap_admin_name,
+                display_name=settings.bootstrap_admin_name,
                 is_active=True,
+                is_superuser=True,
             )
         )
         db_session.commit()

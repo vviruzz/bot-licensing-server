@@ -9,7 +9,7 @@ from app.core.security import create_admin_access_token, verify_password
 from app.db.session import get_db_session
 from app.dependencies.auth import get_current_admin_user
 from app.models.admin_user import AdminUser
-from app.schemas.auth import AdminLoginRequest, AdminLoginResponse, AdminUserResponse
+from app.schemas.auth import AdminLoginRequest, AdminLoginResponse, AdminUserResponse, admin_role_label
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -26,7 +26,7 @@ def login(payload: AdminLoginRequest, db_session: Session = Depends(get_db_sessi
     access_token = create_admin_access_token(
         subject=str(admin_user.id),
         email=admin_user.email,
-        role=admin_user.role.value,
+        role=admin_role_label(is_superuser=admin_user.is_superuser),
     )
     return AdminLoginResponse(
         access_token=access_token,
