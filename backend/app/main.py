@@ -11,7 +11,7 @@ from app.api.routes import auth_router, license_router
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
-from app.models.admin_user import AdminRole, AdminUser
+from app.models.admin_user import AdminUser
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,8 @@ def bootstrap_admin_user() -> None:
         return
 
     admin_email = settings.bootstrap_admin_email.lower().strip()
-    try:
-        admin_role = AdminRole(settings.bootstrap_admin_role.lower())
-    except ValueError:
+    admin_role = settings.bootstrap_admin_role.lower().strip()
+    if admin_role not in {"owner", "admin"}:
         logger.warning("invalid bootstrap admin role %s; skipping admin bootstrap", settings.bootstrap_admin_role)
         return
 
@@ -53,13 +52,17 @@ def bootstrap_admin_user() -> None:
         if existing_admin is not None:
             return
 
+        bootstrap_name = settings.bootstrap_admin_name.strip() or admin_email.split("@", 1)[0]
+        bootstrap_username = bootstrap_name.lower().replace(" ", "_")
+
         db_session.add(
             AdminUser(
                 email=admin_email,
+                username=bootstrap_username,
                 password_hash=hash_password(settings.bootstrap_admin_password),
-                role=admin_role,
-                full_name=settings.bootstrap_admin_name,
+                display_name=bootstrap_name,
                 is_active=True,
+                is_superuser=admin_role == "owner",
             )
         )
         db_session.commit()

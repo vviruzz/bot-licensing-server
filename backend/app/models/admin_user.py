@@ -32,3 +32,12 @@ class AdminUser(Base):
     )
 
     remote_commands: Mapped[list["RemoteCommand"]] = relationship(back_populates="created_by_admin")
+
+    @property
+    def full_name(self) -> str:
+        return (self.display_name or self.username).strip()
+
+    @property
+    def role(self) -> str:
+        return "owner" if self.is_superuser else "admin"
+
