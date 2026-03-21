@@ -7,7 +7,7 @@ from fastapi import APIRouter, FastAPI
 from sqlalchemy import inspect, select
 
 from app.api.health import router as health_router
-from app.api.routes import auth_router, license_router
+from app.api.routes import admin_router, auth_router, bot_router, license_router
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(bot_router)
 api_v1_router.include_router(license_router)
+api_v1_router.include_router(admin_router)
 
 
 @asynccontextmanager
