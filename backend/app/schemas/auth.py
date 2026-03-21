@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
-from app.models.admin_user import AdminRole
+
+def admin_role_label(*, is_superuser: bool) -> str:
+    return "owner" if is_superuser else "admin"
 
 
 class AdminLoginRequest(BaseModel):
@@ -15,9 +17,15 @@ class AdminUserResponse(BaseModel):
 
     id: int
     email: str
-    full_name: str
-    role: AdminRole
+    username: str
+    display_name: str | None = None
     is_active: bool
+    is_superuser: bool
+
+    @computed_field
+    @property
+    def role(self) -> str:
+        return admin_role_label(is_superuser=self.is_superuser)
 
 
 class AdminLoginResponse(BaseModel):
@@ -25,19 +33,3 @@ class AdminLoginResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int
     user: AdminUserResponse
-
-
-class LicenseCheckRequest(BaseModel):
-    license_key: str
-    bot_instance_id: str
-    product_code: str
-    bot_family: str
-    strategy_code: str
-    protocol_version: str
-
-
-class LicenseCheckResponse(BaseModel):
-    ok: bool = True
-    license_status: str = "active"
-    effective_mode: str = "monitor"
-    detail: str = "bot token accepted"
