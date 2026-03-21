@@ -6,6 +6,17 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     database_url: str = "postgresql+psycopg://bot_licensing:bot_licensing@postgres:5432/bot_licensing"
 
+    admin_jwt_secret: str = "change-me-admin-jwt-secret"
+    admin_jwt_algorithm: str = "HS256"
+    admin_jwt_expire_minutes: int = 60
+
+    bootstrap_admin_email: str | None = None
+    bootstrap_admin_password: str | None = None
+    bootstrap_admin_role: str = "owner"
+    bootstrap_admin_name: str = "Bootstrap Admin"
+
+    bot_api_token: str = "change-me-bot-token"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
