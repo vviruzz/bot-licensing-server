@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.admin_user import AdminRole
-
-
 class AdminLoginRequest(BaseModel):
     email: str
     password: str
@@ -16,7 +13,7 @@ class AdminUserResponse(BaseModel):
     id: int
     email: str
     full_name: str
-    role: AdminRole
+    role: str
     is_active: bool
 
 

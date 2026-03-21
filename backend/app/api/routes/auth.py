@@ -26,7 +26,7 @@ def login(payload: AdminLoginRequest, db_session: Session = Depends(get_db_sessi
     access_token = create_admin_access_token(
         subject=str(admin_user.id),
         email=admin_user.email,
-        role=admin_user.role.value,
+        role=admin_user.role,
     )
     return AdminLoginResponse(
         access_token=access_token,
