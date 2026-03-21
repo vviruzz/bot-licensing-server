@@ -1,0 +1,458 @@
+openapi: 3.1.0
+info:
+  title: Licensing Admin MVP API
+  version: 1.0.0
+  description: |
+    Initial contract-first API skeleton derived from licensing_admin_mvp_spec.md
+    and licensing_admin_mvp_examples.json.
+servers:
+  - url: http://localhost:8000
+    description: Local development backend
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags: [system]
+      responses:
+        '200':
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/bot/register:
+    post:
+      summary: Register a bot instance
+      operationId: registerBotInstance
+      tags: [bot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registration response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+  /api/v1/bot/heartbeat:
+    post:
+      summary: Accept a bot heartbeat
+      operationId: postBotHeartbeat
+      tags: [bot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartbeatRequest'
+      responses:
+        '200':
+          description: Heartbeat accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AckResponse'
+  /api/v1/bot/state:
+    post:
+      summary: Accept a bot state snapshot
+      operationId: postBotState
+      tags: [bot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StateRequest'
+      responses:
+        '200':
+          description: State snapshot accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AckResponse'
+  /api/v1/bot/commands/results:
+    post:
+      summary: Accept a command result acknowledgement
+      operationId: postCommandResult
+      tags: [bot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandResultRequest'
+      responses:
+        '200':
+          description: Command result accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AckResponse'
+  /api/v1/admin/licenses:
+    get:
+      summary: Placeholder license list
+      operationId: listLicenses
+      tags: [admin]
+      parameters:
+        - $ref: '#/components/parameters/ProductCode'
+        - $ref: '#/components/parameters/BotFamily'
+        - $ref: '#/components/parameters/StrategyCode'
+      responses:
+        '200':
+          description: License list response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/License'
+                required: [items]
+  /api/v1/admin/bot-instances:
+    get:
+      summary: Placeholder bot instance list
+      operationId: listBotInstances
+      tags: [admin]
+      parameters:
+        - $ref: '#/components/parameters/ProductCode'
+        - $ref: '#/components/parameters/BotFamily'
+        - $ref: '#/components/parameters/StrategyCode'
+      responses:
+        '200':
+          description: Bot instance list response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BotInstance'
+                required: [items]
+components:
+  parameters:
+    ProductCode:
+      in: query
+      name: product_code
+      schema:
+        type: string
+    BotFamily:
+      in: query
+      name: bot_family
+      schema:
+        type: string
+    StrategyCode:
+      in: query
+      name: strategy_code
+      schema:
+        type: string
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+        protocol_version:
+          type: string
+      required: [ok, service, protocol_version]
+    AckResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+      required: [ok, message]
+    ProductDimensions:
+      type: object
+      properties:
+        product_code:
+          type: string
+        bot_family:
+          type: string
+        strategy_code:
+          type: string
+      required: [product_code, bot_family, strategy_code]
+    LicenseStatus:
+      type: string
+      enum: [active, blocked, revoked, expired, suspicious]
+    AppMode:
+      type: string
+      enum: [off, monitor, enforce]
+    BotStatus:
+      type: string
+      enum: [online, offline, stale, paused, blocked, stopping, closing_positions]
+    CommandType:
+      type: string
+      enum: [pause, resume, stop, close_positions]
+    License:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            license_key:
+              type: string
+            status:
+              $ref: '#/components/schemas/LicenseStatus'
+            mode:
+              $ref: '#/components/schemas/AppMode'
+            plan_name:
+              type: string
+            max_instances:
+              type: integer
+            max_fingerprints:
+              type: integer
+            expires_at:
+              type: string
+              format: date-time
+          required: [license_key, status, mode, plan_name, max_instances, max_fingerprints]
+    BotInstance:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            bot_instance_id:
+              type: string
+            license_key:
+              type: string
+            machine_fingerprint:
+              type: string
+            hostname:
+              type: string
+            bot_version:
+              type: string
+            protocol_version:
+              type: string
+            status:
+              $ref: '#/components/schemas/BotStatus'
+            server_effective_mode:
+              $ref: '#/components/schemas/AppMode'
+            authorized_until:
+              type: string
+              format: date-time
+          required: [bot_instance_id, license_key, machine_fingerprint, hostname, bot_version, protocol_version, status, server_effective_mode]
+    RegisterRequest:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            license_key:
+              type: string
+            bot_instance_id:
+              type: string
+            machine_fingerprint:
+              type: string
+            fingerprint_version:
+              type: string
+            session_id:
+              type: string
+            protocol_version:
+              type: string
+            bot_version:
+              type: string
+            hostname:
+              type: string
+            platform:
+              type: string
+            account_label:
+              type: string
+            subaccount_label:
+              type: string
+            mode:
+              $ref: '#/components/schemas/AppMode'
+            demo_mode:
+              type: boolean
+            symbols:
+              type: array
+              items:
+                type: string
+          required: [license_key, bot_instance_id, machine_fingerprint, fingerprint_version, protocol_version, bot_version, hostname, platform, mode]
+    Authorization:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        reason_code:
+          type: [string, 'null']
+        message:
+          type: string
+        authorized_until:
+          type: string
+          format: date-time
+      required: [allowed, reason_code, message]
+    RegisterResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        request_id:
+          type: string
+        server_time:
+          type: string
+          format: date-time
+        protocol_version:
+          type: string
+        license_status:
+          $ref: '#/components/schemas/LicenseStatus'
+        bot_status:
+          $ref: '#/components/schemas/BotStatus'
+        effective_mode:
+          $ref: '#/components/schemas/AppMode'
+        authorization:
+          $ref: '#/components/schemas/Authorization'
+      required: [ok, request_id, server_time, protocol_version, license_status, bot_status, effective_mode, authorization]
+    HeartbeatRequest:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            license_key:
+              type: string
+            bot_instance_id:
+              type: string
+            session_id:
+              type: string
+            protocol_version:
+              type: string
+            status:
+              $ref: '#/components/schemas/BotStatus'
+            account_label:
+              type: string
+            subaccount_label:
+              type: string
+            symbol:
+              type: string
+            sent_at:
+              type: string
+              format: date-time
+          required: [license_key, bot_instance_id, protocol_version, status, sent_at]
+    BotState:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            bot_status:
+              $ref: '#/components/schemas/BotStatus'
+            session_status:
+              type: string
+            connectivity_status:
+              type: string
+            connectivity_mode:
+              $ref: '#/components/schemas/AppMode'
+            grace_until:
+              type: string
+              format: date-time
+            can_open_new_orders:
+              type: boolean
+            can_manage_existing_orders:
+              type: boolean
+            close_only_mode:
+              type: boolean
+            current_symbols:
+              type: array
+              items:
+                type: string
+          required: [bot_status, session_status, connectivity_status, connectivity_mode, can_open_new_orders, can_manage_existing_orders, close_only_mode, current_symbols]
+    SymbolState:
+      type: object
+      properties:
+        symbol:
+          type: string
+        symbol_status:
+          type: string
+        side_mode:
+          type: string
+        grid_enabled:
+          type: boolean
+        open_orders_count:
+          type: integer
+        position_size_long:
+          type: number
+        position_size_short:
+          type: number
+        unrealized_pnl:
+          type: number
+      required: [symbol, symbol_status, side_mode, grid_enabled, open_orders_count, position_size_long, position_size_short, unrealized_pnl]
+    PositionSnapshot:
+      type: object
+      properties:
+        symbol:
+          type: string
+        position_idx:
+          type: integer
+        side:
+          type: string
+        qty:
+          type: number
+        entry_price:
+          type: number
+        mark_price:
+          type: number
+        unrealized_pnl:
+          type: number
+      required: [symbol, position_idx, side, qty, entry_price, mark_price, unrealized_pnl]
+    StateRequest:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            license_key:
+              type: string
+            bot_instance_id:
+              type: string
+            session_id:
+              type: string
+            protocol_version:
+              type: string
+            bot_state:
+              $ref: '#/components/schemas/BotState'
+            symbol_states:
+              type: array
+              items:
+                $ref: '#/components/schemas/SymbolState'
+            position_snapshots:
+              type: array
+              items:
+                $ref: '#/components/schemas/PositionSnapshot'
+            sent_at:
+              type: string
+              format: date-time
+          required: [license_key, bot_instance_id, protocol_version, bot_state, symbol_states, position_snapshots, sent_at]
+    CommandResultRequest:
+      allOf:
+        - $ref: '#/components/schemas/ProductDimensions'
+        - type: object
+          properties:
+            license_key:
+              type: string
+            bot_instance_id:
+              type: string
+            session_id:
+              type: string
+            protocol_version:
+              type: string
+            command_id:
+              type: string
+            command_type:
+              $ref: '#/components/schemas/CommandType'
+            result_status:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            sent_at:
+              type: string
+              format: date-time
+          required: [license_key, bot_instance_id, protocol_version, command_id, command_type, result_status, message, details, sent_at]
