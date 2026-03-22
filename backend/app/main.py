@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import logging
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from sqlalchemy import inspect, select
 
 from app.api.health import router as health_router
 from app.api.routes import admin_router, auth_router, bot_router, license_router
 from app.core.config import settings
+from app.core.request_context import set_request_id
 from app.core.security import hash_password
 from app.db.session import SessionLocal, engine
 from app.models.admin_user import AdminUser
@@ -29,6 +31,18 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
+
+
+@app.middleware("http")
+async def attach_request_id(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", "").strip() or f"req_{uuid4().hex}"
+    request.state.request_id = request_id
+    set_request_id(request_id)
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+
 app.include_router(health_router)
 app.include_router(api_v1_router)
 

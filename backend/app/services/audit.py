@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.request_context import get_request_id
 from app.models.domain import AuditLog
 
 
@@ -22,6 +23,13 @@ def write_audit_log(
     strategy_code: str | None = None,
     metadata: dict[str, Any] | list[Any] | None = None,
 ) -> None:
+    payload_metadata: dict[str, Any] | list[Any] | None
+    if isinstance(metadata, dict):
+        payload_metadata = {"request_id": get_request_id(), **metadata}
+    elif metadata is None:
+        payload_metadata = {"request_id": get_request_id()}
+    else:
+        payload_metadata = metadata
     db.add(
         AuditLog(
             actor_type=actor_type,
@@ -34,6 +42,6 @@ def write_audit_log(
             product_code=product_code,
             bot_family=bot_family,
             strategy_code=strategy_code,
-            metadata_json=metadata,
+            metadata_json=payload_metadata,
         )
     )
