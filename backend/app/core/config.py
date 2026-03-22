@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     bootstrap_admin_name: str = "Bootstrap Admin"
 
     bot_api_token: str = "change-me-bot-token"
+    bot_request_max_age_seconds: int = 300
+    bot_request_max_future_skew_seconds: int = 30
+    bot_endpoint_rate_limit: int = 120
+    bot_endpoint_rate_window_seconds: int = 60
+    admin_login_rate_limit: int = 5
+    admin_login_rate_window_seconds: int = 300
 
     model_config = SettingsConfigDict(
         env_file=".env",

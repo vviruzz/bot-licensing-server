@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
 
 from fastapi import HTTPException, status
 from sqlalchemy import Select, desc, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.request_context import get_request_id
 from app.models.admin_user import AdminUser
 from app.models.domain import BotHeartbeat, BotInstance, BotState, CommandResult, License, RemoteCommand
 from app.services.alerts import (
@@ -604,7 +604,7 @@ def _evaluate_license(license_obj: License, protocol_version: str | int) -> Lice
 def _build_denied_response(payload: Any, reason_code: str, message: str) -> dict[str, Any]:
     return {
         "ok": True,
-        "request_id": f"req_{uuid4().hex}",
+        "request_id": get_request_id(),
         "server_time": datetime.now(UTC),
         "protocol_version": str(payload.protocol_version),
         "license_status": "unknown",
@@ -621,7 +621,7 @@ def _build_denied_response(payload: Any, reason_code: str, message: str) -> dict
 def _build_response(payload: Any, decision: LicenseDecision) -> dict[str, Any]:
     return {
         "ok": True,
-        "request_id": f"req_{uuid4().hex}",
+        "request_id": get_request_id(),
         "server_time": datetime.now(UTC),
         "protocol_version": str(payload.protocol_version),
         "license_status": decision.license_status,
@@ -677,6 +677,29 @@ def _get_bound_bot_context(db: Session, payload: Any, *, action_type: str) -> tu
         )
         db.commit()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="bot instance not found")
+    if (
+        bot_instance.product_code != payload.product_code
+        or bot_instance.bot_family != payload.bot_family
+        or bot_instance.strategy_code != payload.strategy_code
+    ):
+        write_audit_log(
+            db,
+            actor_type="bot",
+            actor_id=payload.bot_instance_id,
+            action_type=action_type,
+            target_type="bot_instance",
+            target_id=payload.bot_instance_id,
+            license_key=license_obj.license_key,
+            bot_instance_id=payload.bot_instance_id,
+            product_code=payload.product_code,
+            bot_family=payload.bot_family,
+            strategy_code=payload.strategy_code,
+            metadata={"reason": "bot context does not match registered binding"},
+        )
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="bot context mismatch")
+    if bot_instance.authorized_until and _ensure_utc(bot_instance.authorized_until) <= datetime.now(UTC):
+        bot_instance.is_authorized = False
     if not bot_instance.is_authorized:
         write_audit_log(
             db,
@@ -703,9 +726,12 @@ def _protocol_to_int(value: str | int) -> int:
     normalized = str(value).strip()
     if normalized.isdigit():
         return int(normalized)
-    major, dot, minor = normalized.partition('.')
-    if dot and major.isdigit() and minor.isdigit():
-        return int(major) * 1000 + int(minor)
+    parts = normalized.split('.')
+    if 2 <= len(parts) <= 3 and all(part.isdigit() for part in parts):
+        total = 0
+        for part in parts:
+            total = total * 1000 + int(part)
+        return total
     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="invalid protocol version")
 
 

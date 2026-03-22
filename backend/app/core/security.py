@@ -94,12 +94,12 @@ def decode_admin_access_token(token: str) -> dict[str, Any]:
     payload = json.loads(_b64url_decode(encoded_payload))
     exp = payload.get("exp")
     if not isinstance(exp, int) or exp < int(datetime.now(timezone.utc).timestamp()):
-        raise _invalid_credentials(detail="admin token expired")
+        raise _invalid_credentials()
 
     return payload
 
 
-def _invalid_credentials(detail: str = "invalid authentication credentials") -> HTTPException:
+def _invalid_credentials(detail: str = "authentication failed") -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail=detail,

@@ -4,7 +4,17 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.services.security import validate_protocol_version
+
+
+class ProtocolVersionModel(BaseModel):
+    @field_validator("protocol_version", mode="before", check_fields=False)
+    @classmethod
+    def validate_protocol_version_field(cls, value: str | int) -> str:
+        return validate_protocol_version(value)
+
 
 class AuthorizationDecision(BaseModel):
     allowed: bool
@@ -12,16 +22,19 @@ class AuthorizationDecision(BaseModel):
     message: str
     authorized_until: datetime | None = None
 
+
 class RegisterTimers(BaseModel):
     heartbeat_sec: int
     state_sync_sec: int
     command_poll_sec: int
 
+
 class RegisterFlags(BaseModel):
     suspicious: bool = False
     license_recheck_required: bool = False
 
-class BotRegisterRequest(BaseModel):
+
+class BotRegisterRequest(ProtocolVersionModel):
     license_key: str
     product_code: str
     bot_family: str
@@ -31,9 +44,11 @@ class BotRegisterRequest(BaseModel):
     fingerprint_version: str | None = None
     session_id: str | None = None
     protocol_version: str | int
+    request_timestamp: datetime | None = None
     bot_version: str | None = None
     hostname: str | None = None
     platform: str | None = None
+
 
 class BotRegisterResponse(BaseModel):
     ok: bool = True
@@ -49,13 +64,16 @@ class BotRegisterResponse(BaseModel):
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
-class LicenseCheckRequest(BaseModel):
+
+class LicenseCheckRequest(ProtocolVersionModel):
     license_key: str
     bot_instance_id: str
     product_code: str
     bot_family: str
     strategy_code: str
     protocol_version: str | int
+    request_timestamp: datetime | None = None
+
 
 class LicenseCheckResponse(BaseModel):
     ok: bool = True
@@ -65,7 +83,8 @@ class LicenseCheckResponse(BaseModel):
     authorization: AuthorizationDecision
     detail: str
 
-class BotHeartbeatRequest(BaseModel):
+
+class BotHeartbeatRequest(ProtocolVersionModel):
     license_key: str
     product_code: str
     bot_family: str
@@ -77,11 +96,13 @@ class BotHeartbeatRequest(BaseModel):
     sent_at: datetime | None = None
     warnings: list[str] | None = None
 
+
 class BotHeartbeatResponse(BaseModel):
     ok: bool = True
     bot_instance_id: str
     status: str
     connectivity_status: str
+
 
 class BotStatePayload(BaseModel):
     bot_status: str | None = None
@@ -93,13 +114,16 @@ class BotStatePayload(BaseModel):
     open_positions_count: int | None = None
     equity_snapshot: Decimal | None = None
 
+
 class SymbolState(BaseModel):
     model_config = ConfigDict(extra="allow")
+
 
 class PositionSnapshot(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-class BotStateRequest(BaseModel):
+
+class BotStateRequest(ProtocolVersionModel):
     license_key: str
     product_code: str
     bot_family: str
@@ -112,12 +136,14 @@ class BotStateRequest(BaseModel):
     position_snapshots: list[PositionSnapshot] = Field(default_factory=list)
     sent_at: datetime | None = None
 
+
 class BotStateResponse(BaseModel):
     ok: bool = True
     bot_instance_id: str
     last_state_sync_at: datetime | None = None
 
-class BotCommandsRequest(BaseModel):
+
+class BotCommandsRequest(ProtocolVersionModel):
     license_key: str
     product_code: str
     bot_family: str
@@ -125,6 +151,8 @@ class BotCommandsRequest(BaseModel):
     bot_instance_id: str
     session_id: str | None = None
     protocol_version: str | int
+    request_timestamp: datetime | None = None
+
 
 class RemoteCommandPayload(BaseModel):
     command_id: str
@@ -143,11 +171,13 @@ class RemoteCommandPayload(BaseModel):
     acknowledged_at: datetime | None = None
     completed_at: datetime | None = None
 
+
 class BotCommandsResponse(BaseModel):
     ok: bool = True
     commands: list[RemoteCommandPayload] = Field(default_factory=list)
 
-class CommandResultRequest(BaseModel):
+
+class CommandResultRequest(ProtocolVersionModel):
     license_key: str
     product_code: str
     bot_family: str
@@ -161,6 +191,7 @@ class CommandResultRequest(BaseModel):
     message: str | None = None
     details: dict[str, Any] | list[Any] | None = None
     sent_at: datetime | None = None
+
 
 class CommandResultResponse(BaseModel):
     ok: bool = True
