@@ -11,6 +11,8 @@ Minimal backend/bootstrap foundation for the licensing/admin MVP.
 - Health endpoints for liveness and readiness
 - Separate admin JWT auth and bot bearer-token auth for MVP
 - Bootstrap admin creation from environment variables after migrations are applied
+- Demo seed tooling for a deterministic license, bot instance, and admin alert
+- Repeatable smoke-test tooling that exercises the current backend flows end to end
 - Admin frontend bootstrap placeholder under `admin/`
 - Optional Adminer profile for local database inspection
 
@@ -44,6 +46,7 @@ Notes:
 - Admin users authenticate with `POST /api/v1/auth/login` and receive a JWT.
 - Bot clients authenticate with a static bearer token from `BOT_API_TOKEN`.
 - The bootstrap admin is created on backend startup only after the `admin_users` table exists.
+- Demo seed data is intentionally MVP/demo oriented and is only created when the seed command is run.
 
 ## Run with Docker Compose
 
@@ -79,6 +82,82 @@ To inspect migration state:
 ```bash
 docker compose exec backend alembic -c /app/alembic.ini current
 ```
+
+## Seed deterministic demo data
+
+After migrations are applied, load or refresh the MVP demo records:
+
+```bash
+docker compose exec backend python -m app.demo.seed_data
+```
+
+Equivalent shell wrapper:
+
+```bash
+docker compose exec backend ./app/scripts/seed_demo_data.sh
+```
+
+This seed step is idempotent and maintains deterministic demo values for:
+
+- demo license key: `LIC-DEMO-SEED-001`
+- demo bot instance: `bot-demo-seed-001`
+- demo session id: `session-demo-seed-001`
+- one demo admin alert tied to the seeded bot/license
+
+High-level expected outcome:
+
+- the license is active in `monitor` mode
+- the demo bot is bound to that license and marked authorized
+- the admin alerts endpoint has at least one deterministic demo alert to display
+
+## Run repeatable smoke tests
+
+Run the end-to-end smoke sequence against the current backend:
+
+```bash
+docker compose exec backend python -m app.demo.smoke_tests
+```
+
+Equivalent shell wrapper:
+
+```bash
+docker compose exec backend ./app/scripts/run_smoke_tests.sh
+```
+
+Optional overrides for remote/VDS validation:
+
+```bash
+docker compose exec \
+  -e SMOKE_BASE_URL=http://localhost:8000 \
+  -e BOOTSTRAP_ADMIN_EMAIL=owner@example.com \
+  -e BOOTSTRAP_ADMIN_PASSWORD=change-me-admin-password \
+  -e BOT_API_TOKEN=change-me-bot-token \
+  backend python -m app.demo.smoke_tests
+```
+
+The smoke test validates these flows in order:
+
+- health live
+- health ready
+- admin login
+- license check
+- bot register
+- bot heartbeat
+- bot state sync
+- admin alerts read
+- admin bot pause
+- admin bot resume
+- admin bot stop
+- admin bot close-positions
+- bot command poll
+- bot command result submission
+
+High-level expected outcome:
+
+- the command exits with status `0`
+- JSON output includes `"ok": true`
+- all smoke steps are listed with `"status": "ok"`
+- command IDs are returned for the four admin-issued bot commands
 
 ## Swagger / OpenAPI docs
 
