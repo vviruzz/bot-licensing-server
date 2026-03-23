@@ -26,7 +26,11 @@ ONLINE_THRESHOLD = timedelta(seconds=45)
 STALE_THRESHOLD = timedelta(seconds=180)
 AUTH_WINDOW = timedelta(minutes=30)
 COMMAND_TTL = timedelta(minutes=5)
-PENDING_COMMAND_STATUSES = ("queued", "sent", "acknowledged")
+# Commands remain deliverable until the bot has seen them once.
+# After the bot acknowledges or starts work on a command, it stays active
+# for expiry/alert processing but must not be re-delivered on later polls.
+DELIVERABLE_COMMAND_STATUSES = ("queued", "sent")
+ACTIVE_COMMAND_STATUSES = DELIVERABLE_COMMAND_STATUSES + ("acknowledged",)
 ALLOWED_MODES = {"off", "monitor", "enforce"}
 COMMAND_STATUS_BY_RESULT = {
     "acknowledged": "acknowledged",
@@ -271,7 +275,7 @@ def get_commands(db: Session, payload: Any) -> dict[str, Any]:
     stmt: Select[tuple[RemoteCommand]] = (
         select(RemoteCommand)
         .where(RemoteCommand.license_id == license_obj.id)
-        .where(RemoteCommand.status.in_(PENDING_COMMAND_STATUSES))
+        .where(RemoteCommand.status.in_(DELIVERABLE_COMMAND_STATUSES))
         .where(or_(RemoteCommand.bot_instance_id.is_(None), RemoteCommand.bot_instance_id == bot_instance.bot_instance_id))
         .where(or_(RemoteCommand.session_id.is_(None), RemoteCommand.session_id == payload.session_id))
         .order_by(RemoteCommand.created_at.asc())
@@ -558,7 +562,7 @@ def _refresh_alerts(db: Session) -> None:
         evaluate_duplicate_fingerprint_alert(db, bot=bot, now=now)
         if bot.license is not None:
             evaluate_license_alerts(db, license_obj=bot.license, bot_instance_id=bot.bot_instance_id, now=now)
-    for command in db.scalars(select(RemoteCommand).where(RemoteCommand.status.in_(PENDING_COMMAND_STATUSES))).all():
+    for command in db.scalars(select(RemoteCommand).where(RemoteCommand.status.in_(ACTIVE_COMMAND_STATUSES))).all():
         if _command_has_expired(command, now):
             _expire_command(db, command, now)
     for command in db.scalars(select(RemoteCommand).where(RemoteCommand.status.in_(["failed", "expired", "completed"]))).all():
