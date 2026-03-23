@@ -34,11 +34,13 @@ COMMAND_STATUS_BY_RESULT = {
     "completed": "completed",
     "failed": "failed",
 }
-ADMIN_COMMAND_BOT_STATUS = {
-    "pause": "paused",
-    "resume": "online",
-    "stop": "stopping",
-    "close_positions": "closing_positions",
+ADMIN_COMMAND_CONFIG = {
+    "pause": {"risk_class": "medium-risk", "bot_status": "paused"},
+    "resume": {"risk_class": "medium-risk", "bot_status": "online"},
+    "stop": {"risk_class": "medium-risk", "bot_status": "stopping"},
+    "close_positions": {"risk_class": "medium-risk", "bot_status": "closing_positions"},
+    "noop": {"risk_class": "low-risk", "bot_status": None},
+    "recheck_license": {"risk_class": "low-risk", "bot_status": None},
 }
 
 
@@ -446,6 +448,11 @@ def create_admin_bot_command(db: Session, *, bot_instance_id: str, command_type:
     bot = db.scalar(select(BotInstance).where(BotInstance.bot_instance_id == bot_instance_id))
     if bot is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="bot instance not found")
+
+    command_config = ADMIN_COMMAND_CONFIG.get(command_type)
+    if command_config is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="unsupported command type")
+
     command = RemoteCommand(
         command_id=f"cmd_{uuid4().hex}",
         license_id=bot.license_id,
@@ -455,7 +462,7 @@ def create_admin_bot_command(db: Session, *, bot_instance_id: str, command_type:
         bot_family=bot.bot_family,
         strategy_code=bot.strategy_code,
         command_type=command_type,
-        risk_class="medium-risk",
+        risk_class=command_config["risk_class"],
         payload_json={},
         status="queued",
         reason=reason,
@@ -463,7 +470,11 @@ def create_admin_bot_command(db: Session, *, bot_instance_id: str, command_type:
         expires_at=datetime.now(UTC) + COMMAND_TTL,
     )
     db.add(command)
-    bot.status = ADMIN_COMMAND_BOT_STATUS[command_type]
+
+    next_bot_status = command_config["bot_status"]
+    if next_bot_status is not None:
+        bot.status = next_bot_status
+
     write_audit_log(
         db,
         actor_type="admin",
@@ -476,7 +487,12 @@ def create_admin_bot_command(db: Session, *, bot_instance_id: str, command_type:
         product_code=bot.product_code,
         bot_family=bot.bot_family,
         strategy_code=bot.strategy_code,
-        metadata={"command_id": command.command_id, "reason": reason, "status": command.status},
+        metadata={
+            "command_id": command.command_id,
+            "reason": reason,
+            "status": command.status,
+            "risk_class": command.risk_class,
+        },
     )
     db.commit()
     return {"ok": True, "command_id": command.command_id, "status": command.status, "command_type": command.command_type}

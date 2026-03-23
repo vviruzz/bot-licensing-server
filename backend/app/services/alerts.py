@@ -11,6 +11,7 @@ from app.models.domain import AdminAlert, BotInstance, License, RemoteCommand
 
 ALERT_STATUS_OPEN = "open"
 ALERT_STATUS_RESOLVED = "resolved"
+QUIET_COMMAND_ALERT_TYPES = {"noop", "recheck_license"}
 
 
 def evaluate_bot_connectivity_alerts(db: Session, *, bot: BotInstance, connectivity_status: str, now: datetime | None = None) -> None:
@@ -46,6 +47,18 @@ def evaluate_bot_connectivity_alerts(db: Session, *, bot: BotInstance, connectiv
 
 def evaluate_command_alert(db: Session, *, command: RemoteCommand, now: datetime | None = None) -> None:
     timestamp = now or datetime.now(UTC)
+    if command.command_type in QUIET_COMMAND_ALERT_TYPES:
+        _resolve_alerts(
+            db,
+            alert_types=("command_failed", "command_expired"),
+            license_id=command.license_id,
+            bot_instance_id=command.bot_instance_id,
+            session_id=command.session_id,
+            target_summary_prefix=f"Command {command.command_id}",
+            resolved_at=timestamp,
+        )
+        return
+
     if command.status == "failed":
         _upsert_alert(
             db,
