@@ -26,11 +26,11 @@ ONLINE_THRESHOLD = timedelta(seconds=45)
 STALE_THRESHOLD = timedelta(seconds=180)
 AUTH_WINDOW = timedelta(minutes=30)
 COMMAND_TTL = timedelta(minutes=5)
-# Commands remain deliverable until the bot has seen them once.
-# After the bot acknowledges or starts work on a command, it stays active
-# for expiry/alert processing but must not be re-delivered on later polls.
-DELIVERABLE_COMMAND_STATUSES = ("queued", "sent")
-ACTIVE_COMMAND_STATUSES = DELIVERABLE_COMMAND_STATUSES + ("acknowledged",)
+# Only queued commands are poll-eligible. Once a poll hands a command to a bot,
+# the command moves to sent so it can still participate in lifecycle tracking
+# (result handling, expiry, and alerting) without being returned again.
+DELIVERABLE_COMMAND_STATUSES = ("queued",)
+ACTIVE_COMMAND_STATUSES = ("queued", "sent", "acknowledged")
 ALLOWED_MODES = {"off", "monitor", "enforce"}
 COMMAND_STATUS_BY_RESULT = {
     "acknowledged": "acknowledged",

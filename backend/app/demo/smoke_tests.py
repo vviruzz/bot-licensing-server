@@ -237,6 +237,15 @@ def run_smoke_tests(ctx: SmokeContext) -> list[dict[str, str]]:
         _expect(result["status"] == "completed", f"command result for {command['command_type']} was not marked completed")
     steps.append({"step": "bot_command_results", "status": "ok"})
 
+    post_result_commands = _http_json("GET", f"{ctx.base_url}/api/v1/bot/commands?{query}", headers=_bot_headers(ctx))
+    repeated_command_ids = {
+        item["command_id"]
+        for item in post_result_commands["commands"]
+        if item["command_id"] in set(command_ids)
+    }
+    _expect(not repeated_command_ids, f"bot command poll re-delivered completed commands: {sorted(repeated_command_ids)}")
+    steps.append({"step": "bot_command_poll_after_results", "status": "ok"})
+
     return steps
 
 
