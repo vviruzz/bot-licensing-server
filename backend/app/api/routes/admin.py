@@ -47,3 +47,12 @@ def stop_bot(payload: AdminCommandRequest, admin_user: AdminUser = Depends(get_c
 @router.post("/bot/close-positions", response_model=AdminCommandResponse)
 def close_positions(payload: AdminCommandRequest, admin_user: AdminUser = Depends(get_current_admin_user), db_session: Session = Depends(get_db_session)) -> AdminCommandResponse:
     return AdminCommandResponse.model_validate(create_admin_bot_command(db_session, bot_instance_id=payload.bot_instance_id, command_type="close_positions", reason=payload.reason, admin_user=admin_user))
+
+@router.post("/bot/noop", response_model=AdminCommandResponse)
+def noop_bot(payload: AdminCommandRequest, admin_user: AdminUser = Depends(get_current_admin_user), db_session: Session = Depends(get_db_session)) -> AdminCommandResponse:
+    return AdminCommandResponse.model_validate(create_admin_bot_command(db_session, bot_instance_id=payload.bot_instance_id, command_type="noop", reason=payload.reason, admin_user=admin_user))
+
+
+@router.post("/bot/recheck-license", response_model=AdminCommandResponse)
+def recheck_license_bot(payload: AdminCommandRequest, admin_user: AdminUser = Depends(get_current_admin_user), db_session: Session = Depends(get_db_session)) -> AdminCommandResponse:
+    return AdminCommandResponse.model_validate(create_admin_bot_command(db_session, bot_instance_id=payload.bot_instance_id, command_type="recheck_license", reason=payload.reason, admin_user=admin_user))

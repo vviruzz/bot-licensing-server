@@ -88,7 +88,7 @@ export function blockLicense(token: string, payload: BlockLicenseRequest): Promi
 
 function sendBotCommand(
   token: string,
-  path: "/admin/bot/pause" | "/admin/bot/resume" | "/admin/bot/stop" | "/admin/bot/close-positions",
+  path: "/admin/bot/pause" | "/admin/bot/resume" | "/admin/bot/stop" | "/admin/bot/close-positions" | "/admin/bot/noop" | "/admin/bot/recheck-license",
   payload: AdminCommandRequest,
 ): Promise<AdminCommandResponse> {
   return request<AdminCommandResponse>(path, {
@@ -112,4 +112,12 @@ export function stopBot(token: string, payload: AdminCommandRequest): Promise<Ad
 
 export function closePositions(token: string, payload: AdminCommandRequest): Promise<AdminCommandResponse> {
   return sendBotCommand(token, "/admin/bot/close-positions", payload);
+}
+
+export function noopBot(token: string, payload: AdminCommandRequest): Promise<AdminCommandResponse> {
+  return sendBotCommand(token, "/admin/bot/noop", payload);
+}
+
+export function recheckLicenseBot(token: string, payload: AdminCommandRequest): Promise<AdminCommandResponse> {
+  return sendBotCommand(token, "/admin/bot/recheck-license", payload);
 }

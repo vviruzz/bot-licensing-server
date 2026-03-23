@@ -10,7 +10,9 @@ import {
   fetchBots,
   fetchLicenses,
   loginAdmin,
+  noopBot,
   pauseBot,
+  recheckLicenseBot,
   resumeBot,
   stopBot,
 } from "./api";
@@ -552,7 +554,7 @@ export default function App() {
     }
   }
 
-  async function handleBotCommand(botId: string, action: "pause" | "resume" | "stop" | "close") {
+  async function handleBotCommand(botId: string, action: "pause" | "resume" | "stop" | "close" | "noop" | "recheck-license") {
     const reason = window.prompt(`Optional reason for ${action} on ${botId}:`) ?? "";
     setNotice("");
 
@@ -564,7 +566,11 @@ export default function App() {
             ? await resumeBot(token, { bot_instance_id: botId, reason: reason || undefined })
             : action === "stop"
               ? await stopBot(token, { bot_instance_id: botId, reason: reason || undefined })
-              : await closePositions(token, { bot_instance_id: botId, reason: reason || undefined });
+              : action === "noop"
+                ? await noopBot(token, { bot_instance_id: botId, reason: reason || undefined })
+                : action === "recheck-license"
+                  ? await recheckLicenseBot(token, { bot_instance_id: botId, reason: reason || undefined })
+                  : await closePositions(token, { bot_instance_id: botId, reason: reason || undefined });
       setNotice(`Command queued for ${botId}: ${response.status}.`);
       await Promise.all([loadBots(), loadAlerts(), selectedBotId === botId ? loadBotDetail(botId) : Promise.resolve()]);
     } catch (error) {
@@ -582,10 +588,8 @@ export default function App() {
       currentView={currentView}
       onNavigate={(view) => {
         setCurrentView(view);
-        if (view !== "bot-detail") {
-          setSelectedBotId(null);
-          setBotDetail(null);
-        }
+        setSelectedBotId(null);
+        setBotDetail(null);
       }}
       onLogout={handleLogout}
     >
@@ -686,6 +690,8 @@ export default function App() {
                     <ActionButton onClick={() => { setSelectedBotId(item.bot_instance_id); setCurrentView("bot-detail"); }}>Details</ActionButton>
                     <ActionButton onClick={() => void handleBotCommand(item.bot_instance_id, "pause")}>Pause</ActionButton>
                     <ActionButton onClick={() => void handleBotCommand(item.bot_instance_id, "resume")}>Resume</ActionButton>
+                    <ActionButton onClick={() => void handleBotCommand(item.bot_instance_id, "noop")}>No-op</ActionButton>
+                    <ActionButton onClick={() => void handleBotCommand(item.bot_instance_id, "recheck-license")}>Recheck license</ActionButton>
                     <ActionButton tone="danger" onClick={() => void handleBotCommand(item.bot_instance_id, "stop")}>Stop</ActionButton>
                     <ActionButton tone="danger" onClick={() => void handleBotCommand(item.bot_instance_id, "close")}>Close positions</ActionButton>
                   </div>
@@ -746,6 +752,8 @@ export default function App() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <ActionButton onClick={() => void handleBotCommand(botDetail.bot_instance_id, "pause")}>Pause</ActionButton>
                   <ActionButton onClick={() => void handleBotCommand(botDetail.bot_instance_id, "resume")}>Resume</ActionButton>
+                  <ActionButton onClick={() => void handleBotCommand(botDetail.bot_instance_id, "noop")}>No-op</ActionButton>
+                  <ActionButton onClick={() => void handleBotCommand(botDetail.bot_instance_id, "recheck-license")}>Recheck license</ActionButton>
                   <ActionButton tone="danger" onClick={() => void handleBotCommand(botDetail.bot_instance_id, "stop")}>Stop</ActionButton>
                   <ActionButton tone="danger" onClick={() => void handleBotCommand(botDetail.bot_instance_id, "close")}>Close positions</ActionButton>
                 </div>
