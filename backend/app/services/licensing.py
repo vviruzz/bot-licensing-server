@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import Select, desc, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.json import normalize_json_value
 from app.core.request_context import get_request_id
 from app.models.admin_user import AdminUser
 from app.models.domain import BotHeartbeat, BotInstance, BotState, CommandResult, License, RemoteCommand
@@ -218,7 +219,7 @@ def record_heartbeat(db: Session, payload: Any, ip_address: str | None = None) -
             status=payload.status,
             sent_at=payload.sent_at,
             ip_address=ip_address,
-            warnings_json=payload.warnings,
+            warnings_json=normalize_json_value(payload.warnings),
         )
     )
     bot_instance.last_seen_at = now
@@ -246,9 +247,9 @@ def record_state(db: Session, payload: Any) -> dict[str, Any]:
             session_status=payload.bot_state.session_status,
             connectivity_status=payload.bot_state.connectivity_status or connectivity_status,
             grace_until=payload.bot_state.grace_until,
-            current_symbols_json=payload.bot_state.current_symbols,
-            symbol_states_json=[item.model_dump(mode="json") for item in payload.symbol_states],
-            position_snapshots_json=[item.model_dump(mode="json") for item in payload.position_snapshots],
+            current_symbols_json=normalize_json_value(payload.bot_state.current_symbols),
+            symbol_states_json=normalize_json_value([item.model_dump() for item in payload.symbol_states]),
+            position_snapshots_json=normalize_json_value([item.model_dump() for item in payload.position_snapshots]),
             open_orders_count=payload.bot_state.open_orders_count,
             open_positions_count=payload.bot_state.open_positions_count,
             equity_snapshot=payload.bot_state.equity_snapshot,
@@ -319,7 +320,7 @@ def record_command_result(db: Session, payload: Any) -> dict[str, Any]:
             bot_instance_id=bot_instance.bot_instance_id,
             result_status=payload.result_status,
             message=payload.message,
-            details_json=payload.details,
+            details_json=normalize_json_value(payload.details),
             sent_at=payload.sent_at,
         )
     )
@@ -403,7 +404,7 @@ def get_admin_bot_detail(db: Session, bot_instance_id: str) -> dict[str, Any]:
         "bot_status": latest_state.bot_status,
         "session_status": latest_state.session_status,
         "connectivity_status": latest_state.connectivity_status,
-        "current_symbols": latest_state.current_symbols_json,
+        "current_symbols": normalize_json_value(latest_state.current_symbols_json),
         "received_at": latest_state.received_at,
     }
     payload["recent_commands"] = [_serialize_command(command) for command in recent_commands]
@@ -524,7 +525,7 @@ def _serialize_command(command: RemoteCommand) -> dict[str, Any]:
         "strategy_code": command.strategy_code,
         "command_type": command.command_type,
         "risk_class": command.risk_class,
-        "payload": command.payload_json,
+        "payload": normalize_json_value(command.payload_json),
         "status": command.status,
         "reason": command.reason,
         "created_at": command.created_at,

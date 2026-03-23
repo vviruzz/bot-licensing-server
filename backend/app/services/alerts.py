@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.json import normalize_json_value
 from app.models.domain import AdminAlert, BotInstance, License, RemoteCommand
 
 ALERT_STATUS_OPEN = "open"
@@ -168,7 +169,7 @@ def list_alert_payloads(db: Session) -> list[dict[str, Any]]:
             "bot_instance_id": alert.bot_instance_id,
             "session_id": alert.session_id,
             "summary": alert.summary,
-            "details": alert.details_json,
+            "details": normalize_json_value(alert.details_json),
             "first_seen_at": alert.first_seen_at,
             "last_seen_at": alert.last_seen_at,
             "resolved_at": alert.resolved_at,
@@ -220,7 +221,7 @@ def _upsert_alert(
                 bot_family=bot_family,
                 strategy_code=strategy_code,
                 summary=summary,
-                details_json=details,
+                details_json=normalize_json_value(details),
                 first_seen_at=now,
                 last_seen_at=now,
             )
@@ -229,7 +230,7 @@ def _upsert_alert(
 
     alert.severity = severity
     alert.summary = summary
-    alert.details_json = details
+    alert.details_json = normalize_json_value(details)
     alert.last_seen_at = now
     alert.resolved_at = None
 
